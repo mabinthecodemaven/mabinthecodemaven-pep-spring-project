@@ -1,7 +1,11 @@
 package com.example.controller;
 import org.springframework.web.bind.annotation.*;
+import org.jboss.logging.Messages;
 import org.springframework.http.*;
 import com.example.entity.*;
+import com.example.exception.AccountException;
+import com.example.service.*;
+
 import java.util.*;
 
 /**
@@ -13,10 +17,29 @@ import java.util.*;
 
  @RestController
  public class SocialMediaController {
+    private AccountService accountService;
+    private MessageService messageService;
+
+    public SocialMediaController(AccountService accountService, MessageService messageService){
+        this.accountService = accountService;
+        this.messageService = messageService;
+    }
  
      @PostMapping("/register")
-     public ResponseEntity<Account> register(@RequestBody Account account) {
-         // logic here
+     public ResponseEntity<?> register(@RequestBody Account account) {
+        try{
+            Account newAccount = accountService.register(account);
+            return ResponseEntity.ok(newAccount);
+        }
+        catch(AccountException.InvalidAccountException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch(AccountException.DuplicateUsernameException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }        
+        catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
      }
  
      @PostMapping("/login")
