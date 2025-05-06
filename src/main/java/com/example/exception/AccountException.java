@@ -14,4 +14,10 @@ public class AccountException {
         }
     }
 
+    public static class InvalidLoginException extends RuntimeException{
+        public InvalidLoginException(){
+            super("Invalid username and/or password");
+        }
+    }
+
 }

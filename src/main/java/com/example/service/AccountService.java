@@ -31,6 +31,19 @@ public class AccountService {
         return accountRepository.save(account);  
     }
 
+    public Account login(Account account){
+        Account existing = accountRepository.findByUsername(account.getUsername());
+        if(existing == null || !account.getPassword().equals(existing.getPassword())){
+            throw new AccountException.InvalidLoginException();
+        }
+        return existing;
+    }
 
-
+    public Account findByAccountId(Integer id){
+        Account existing = accountRepository.findByAccountId(id);
+        if(existing == null){
+            throw new AccountException.InvalidAccountException("No account with matching ID");
+        }
+        return existing;
+    }
 }

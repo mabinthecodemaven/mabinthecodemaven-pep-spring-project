@@ -4,6 +4,7 @@ import org.jboss.logging.Messages;
 import org.springframework.http.*;
 import com.example.entity.*;
 import com.example.exception.AccountException;
+import com.example.exception.MessageException;
 import com.example.service.*;
 
 import java.util.*;
@@ -25,8 +26,8 @@ import java.util.*;
         this.messageService = messageService;
     }
  
-     @PostMapping("/register")
-     public ResponseEntity<?> register(@RequestBody Account account) {
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Account account) {
         try{
             Account newAccount = accountService.register(account);
             return ResponseEntity.ok(newAccount);
@@ -40,40 +41,71 @@ import java.util.*;
         catch(Exception e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
         }
-     }
+    }
  
-     @PostMapping("/login")
-     public ResponseEntity<Account> login(@RequestBody Account account) {
-         // logic here
-     }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Account account) {
+        try{
+            Account fetchedAcc = accountService.login(account);
+            return ResponseEntity.ok(fetchedAcc);
+        }
+        catch(AccountException.InvalidLoginException e){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+        catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
+        }
+    }
  
-     @PostMapping("/messages")
-     public ResponseEntity<Message> createMessage(@RequestBody Message message) {
-         // logic here
-     }
+    @PostMapping("/messages")
+    public ResponseEntity<?> createMessage(@RequestBody Message message) {
+        try{
+            return ResponseEntity.ok(messageService.newMessage(message));
+        }
+        catch(AccountException.InvalidAccountException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch(MessageException.InvalidMessageException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
+        }
+    }
  
-     @GetMapping("/messages")
-     public List<Message> getAllMessages() {
-         // logic here
-     }
+    @GetMapping("/messages")
+    public ResponseEntity<List<Message>> getAllMessages() {
+        return ResponseEntity.ok(messageService.getAllMessages());
+    }
  
-     @GetMapping("/messages/{messageId}")
-     public ResponseEntity<Message> getMessageById(@PathVariable int messageId) {
-         // logic here
-     }
+    @GetMapping("/messages/{messageId}")
+    public ResponseEntity<?> getMessageById(@PathVariable int messageId) {        
+        Message message = messageService.getMessage(messageId);
+        return message == null ? ResponseEntity.ok().body("") : ResponseEntity.ok(message);        
+    }
  
-     @DeleteMapping("/messages/{messageId}")
-     public ResponseEntity<Integer> deleteMessage(@PathVariable int messageId) {
-         // logic here
-     }
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<?> deleteMessage(@PathVariable int messageId) {
+        return messageService.deleteMessage(messageId) == null ? ResponseEntity.ok("") : ResponseEntity.ok(1);
+    }
  
-     @PatchMapping("/messages/{messageId}")
-     public ResponseEntity<Integer> updateMessage(@PathVariable int messageId, @RequestBody Map<String, String> updateBody) {
-         // logic here
-     }
+    @PatchMapping("/messages/{messageId}")
+    public ResponseEntity<?> updateMessage(@PathVariable int messageId, @RequestBody Map<String, String> body) {
+        String newText = body.get("messageText");
+        try{            
+            return ResponseEntity.status(HttpStatus.OK).body(messageService.updateMessage(messageId, newText));
+        }
+        catch(MessageException.InvalidMessageException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch(Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
  
-     @GetMapping("/accounts/{accountId}/messages")
-     public List<Message> getMessagesByAccount(@PathVariable int accountId) {
-         // logic here
-     }
+    @GetMapping("/accounts/{accountId}/messages")
+    public ResponseEntity<List<Message>> getMessagesByUser(@PathVariable Integer accountId) {
+        List<Message> messages = messageService.getMessagesByAccountId(accountId);
+        return ResponseEntity.ok(messages);
+    }
  }
